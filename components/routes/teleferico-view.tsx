@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
-import { Plus, CableCar, MapPin } from "lucide-react" // Icono CableCar es ideal aquí
+import { Plus, CableCar, MapPin } from "lucide-react" 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { TelefericoForm } from "./teleferico-form"
 import MapWrapper from "@/components/maps/map-wrapper"
