@@ -1,3 +1,5 @@
+"use server"
+
 import { db } from "@/db"
 import { telefericos, estaciones, transportes, rutas } from "@/db/schema"
 import { eq } from "drizzle-orm"
@@ -71,6 +73,7 @@ export async function createMinibus(data: NewTransporte, routePoints: any[]) {
 
     await db.insert(rutas).values({
       transporteId: newTransporte.id,
+      nombre: data.rutaNombre,
       puntos: routePoints,
     })
 
@@ -79,5 +82,33 @@ export async function createMinibus(data: NewTransporte, routePoints: any[]) {
   } catch (error) {
     console.error("Error creating minibus:", error)
     return { success: false, error: "Failed to create minibus" }
+  }
+}
+
+// --- Transportes ---
+
+export async function createTransport(data: NewTransporte) {
+  try {
+    const [newTransporte] = await db.insert(transportes).values(data).returning()
+    revalidatePath("/dashboard/rutas")
+    return { success: true, id: newTransporte.id }
+  } catch (error) {
+    console.error("Error creating transport:", error)
+    return { success: false, error: "Failed to create transport" }
+  }
+}
+
+export async function createRoute(data: { transporte_id: string; nombre: string; puntos: any[] }) {
+  try {
+    await db.insert(rutas).values({
+      transporteId: data.transporte_id,
+      nombre: data.nombre,
+      puntos: data.puntos,
+    })
+    revalidatePath("/dashboard/rutas")
+    return { success: true }
+  } catch (error) {
+    console.error("Error creating route:", error)
+    return { success: false, error: "Failed to create route" }
   }
 }

@@ -1,15 +1,10 @@
 import type React from "react"
-import type { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: "Dashboard - GAMLP Movilidad Urbana",
-  description: "Panel de control del sistema de movilidad urbana",
-}
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <DashboardShell>{children}</DashboardShell>
 }

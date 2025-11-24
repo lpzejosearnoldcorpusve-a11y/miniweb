@@ -8,6 +8,20 @@
       "when": 1763935184764,
       "tag": "0000_ancient_wind_dancer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763948934771,
+      "tag": "0001_fine_dragon_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763951606997,
+      "tag": "0002_panoramic_tyrannus",
+      "breakpoints": true
     }
   ]
 }

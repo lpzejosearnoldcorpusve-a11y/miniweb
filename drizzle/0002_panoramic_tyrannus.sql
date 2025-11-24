@@ -1,0 +1,1 @@
+ALTER TABLE "rutas" ADD COLUMN "nombre" text NOT NULL;

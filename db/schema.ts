@@ -56,6 +56,7 @@ export const rutas = pgTable("rutas", {
   transporteId: uuid("transporte_id")
     .references(() => transportes.id, { onDelete: "cascade" })
     .notNull(),
+  nombre: text("nombre").notNull(),
   // Storing points as a JSON array of { lat: number, lng: number, order: number }
   puntos: jsonb("puntos").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

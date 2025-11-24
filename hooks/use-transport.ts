@@ -1,7 +1,7 @@
 import useSWR from "swr"
 import type { Teleferico, Estacion, Transporte } from "@/types"
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher: (url: string) => Promise<any> = (url: string) => fetch(url).then((res) => res.json())
 
 export type TelefericoWithStations = Teleferico & { estaciones: Estacion[] }
 export type MinibusWithRoute = Transporte & { ruta: any[] }
