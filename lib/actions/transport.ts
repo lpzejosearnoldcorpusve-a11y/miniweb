@@ -73,7 +73,6 @@ export async function createMinibus(data: NewTransporte, routePoints: any[]) {
 
     await db.insert(rutas).values({
       transporteId: newTransporte.id,
-      nombre: data.rutaNombre,
       puntos: routePoints,
     })
 
@@ -102,7 +101,6 @@ export async function createRoute(data: { transporte_id: string; nombre: string;
   try {
     await db.insert(rutas).values({
       transporteId: data.transporte_id,
-      nombre: data.nombre,
       puntos: data.puntos,
     })
     revalidatePath("/dashboard/rutas")

@@ -1,5 +1,5 @@
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm"
-import type { users, tokens, telefericos, estaciones, transportes, rutas } from "@/db/schema"
+import type { users, tokens, telefericos, estaciones, transportes, rutas, tarjetasRfid } from "@/db/schema"
 
 export type User = InferSelectModel<typeof users>
 export type NewUser = InferInsertModel<typeof users>
@@ -24,3 +24,5 @@ export interface RoutePoint {
   lng: number
   order: number
 }
+export type TarjetaRfid = InferSelectModel<typeof tarjetasRfid>
+export type NewTarjetaRfid = InferInsertModel<typeof tarjetasRfid>

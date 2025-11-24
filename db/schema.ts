@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   telefono: varchar("telefono", { length: 20 }),
   password: text("password").notNull(),
-  rol: text("rol").notNull().default("user"), 
+  rol: text("rol").notNull().default("user"), // admin, user, chofer, etc.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
@@ -18,7 +18,7 @@ export const tokens = pgTable("tokens", {
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   token: text("token").notNull(),
-  type: text("type").notNull(), 
+  type: text("type").notNull(), // reset_password, email_verification, etc.
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
@@ -26,7 +26,7 @@ export const tokens = pgTable("tokens", {
 export const telefericos = pgTable("telefericos", {
   id: uuid("id").defaultRandom().primaryKey(),
   nombre: text("nombre").notNull(), // Línea Roja, Amarilla, etc.
-  color: text("color").notNull(), 
+  color: text("color").notNull(), // Hex code
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
 
@@ -46,8 +46,8 @@ export const transportes = pgTable("transportes", {
   id: uuid("id").defaultRandom().primaryKey(),
   sindicato: text("sindicato").notNull(),
   linea: text("linea").notNull(),
-  rutaNombre: text("ruta_nombre").notNull(), // e.g., "Villa Salomé - San Pedro"
-  tipo: text("tipo").default("minibus"), // minibus, micro, trufi
+  rutaNombre: text("ruta_nombre").notNull(), 
+  tipo: text("tipo").default("minibus"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
 
@@ -56,8 +56,18 @@ export const rutas = pgTable("rutas", {
   transporteId: uuid("transporte_id")
     .references(() => transportes.id, { onDelete: "cascade" })
     .notNull(),
-  nombre: text("nombre").notNull(),
   // Storing points as a JSON array of { lat: number, lng: number, order: number }
   puntos: jsonb("puntos").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
+export const tarjetasRfid = pgTable("tarjetas_rfid", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  uid: varchar("uid", { length: 20 }).notNull().unique(), 
+  nombre: text("nombre").notNull(), // Nombre del titular
+  celular: varchar("celular", { length: 20 }).notNull(),
+  montoBs: doublePrecision("monto_bs").notNull().default(0), 
+  estado: text("estado").notNull().default("activa"), 
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
