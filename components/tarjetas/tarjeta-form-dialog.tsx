@@ -69,16 +69,26 @@ export function TarjetaFormDialog({ tarjeta, open, onOpenChange, onSuccess }: Ta
     setIsScanning(true)
     setScanStatus("scanning")
 
+    console.log("🔄 Iniciando escaneo de tarjetas...")
+
     try {
       // Hacer polling cada 1.5 segundos por máximo 60 segundos
       for (let i = 0; i < 40; i++) {
+        console.log(`🔍 Intento ${i + 1}/40 - Consultando pendientes...`)
+
         const response = await fetch("/api/tarjetas?action=pending")
         const data = await response.json()
 
+        console.log("📨 Respuesta del servidor:", data)
+
         if (data.uid) {
+          console.log(`✅ UID encontrado: ${data.uid}`)
+
           // Verificar si la tarjeta ya está registrada
           const checkResponse = await fetch(`/api/tarjetas?uid=${data.uid}`)
           const checkData = await checkResponse.json()
+
+          console.log("🔍 Estado de registro:", checkData)
 
           if (checkData.registered) {
             setScanStatus("exists")
@@ -117,7 +127,7 @@ export function TarjetaFormDialog({ tarjeta, open, onOpenChange, onSuccess }: Ta
       })
       setTimeout(() => scanCard(), 2000)
     } catch (error) {
-      console.error("Error scanning card:", error)
+      console.error("❌ Error scanning card:", error)
       setScanStatus("idle")
       toast({
         title: "Error de conexión",

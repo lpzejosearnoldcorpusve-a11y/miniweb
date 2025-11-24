@@ -13,6 +13,8 @@ export async function GET(request: Request) {
     // Para el frontend: obtener UID pendiente del ESP8266
     if (action === "pending") {
       const pendingUid = pendingUids.shift() // FIFO
+      console.log(`🔍 Frontend consultando pendientes. Cola actual: ${pendingUids.length} items. Enviando: ${pendingUid || 'null'}`)
+      console.log(`📋 Cola después de shift: [${pendingUids.join(', ')}]`)
       return NextResponse.json({ uid: pendingUid || null })
     }
 
@@ -58,8 +60,8 @@ export async function POST(request: Request) {
 
       // Agregar a la cola de UIDs pendientes
       pendingUids.push(uid)
-      console.log(`UID detectado por ESP8266: ${uid}`)
-
+      console.log(`🎯 ESP8266 detectó tarjeta UID: ${uid}. Cola ahora tiene ${pendingUids.length} items`)
+      console.log(`📋 Cola completa: [${pendingUids.join(', ')}]`)
       return NextResponse.json({ success: true, message: "UID recibido" })
     }
 
