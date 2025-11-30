@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, Bus, MapPin, BarChart3, Settings, LogOut, CreditCard } from "lucide-react"
+import { LayoutDashboard, Users, Bus, MapPin, BarChart3, Settings, LogOut, CreditCard, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const menuItems = [
@@ -13,9 +13,14 @@ const menuItems = [
     href: "/dashboard",
   },
   {
-    title: "Usuarios",
+    title: "Usuarios Sistema",
     icon: Users,
     href: "/dashboard/usuarios",
+  },
+  {
+    title: "Usuarios App",
+    icon: Smartphone,
+    href: "/dashboard/usuarios-app",
   },
   {
     title: "Rutas",

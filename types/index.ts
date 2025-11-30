@@ -1,5 +1,15 @@
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm"
-import type { users, tokens, telefericos, estaciones, transportes, rutas, tarjetasRfid } from "@/db/schema"
+import type {
+  users,
+  tokens,
+  telefericos,
+  estaciones,
+  transportes,
+  rutas,
+  tarjetasRfid,
+  usuariosApp,
+  tokensApp,
+} from "@/db/schema"
 
 export type User = InferSelectModel<typeof users>
 export type NewUser = InferInsertModel<typeof users>
@@ -24,5 +34,38 @@ export interface RoutePoint {
   lng: number
   order: number
 }
+
 export type TarjetaRfid = InferSelectModel<typeof tarjetasRfid>
 export type NewTarjetaRfid = InferInsertModel<typeof tarjetasRfid>
+
+export type UsuarioApp = InferSelectModel<typeof usuariosApp>
+export type NewUsuarioApp = InferInsertModel<typeof usuariosApp>
+
+export type TokenApp = InferSelectModel<typeof tokensApp>
+export type NewTokenApp = InferInsertModel<typeof tokensApp>
+
+export interface UsuarioAppWithTarjetas extends UsuarioApp {
+  tarjetas?: TarjetaRfid[]
+  tokensActivos?: number
+}
+
+export interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export * from "./users"
+export * from "./transport"
+export * from "./tarjetas"
+export * from "./usuarios-app"
+export * from "./api"
