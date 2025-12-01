@@ -95,9 +95,65 @@ export const tokensApp = pgTable("tokens_app", {
     .references(() => usuariosApp.id, { onDelete: "cascade" })
     .notNull(),
   token: text("token").notNull().unique(),
-  deviceInfo: text("device_info"), // Device/platform info
+  deviceInfo: text("device_info"),
   ipAddress: varchar("ip_address", { length: 45 }),
-  type: text("type").notNull().default("access"), // access, refresh
+  type: text("type").notNull().default("access"),
   expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
+export const vehiculosGps = pgTable("vehiculos_gps", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  placa: varchar("placa", { length: 20 }).notNull().unique(),
+  linea: text("linea").notNull(),
+  transporteId: uuid("transporte_id").references(() => transportes.id, { onDelete: "set null" }),
+  tipoVehiculo: text("tipo_vehiculo").notNull().default("minibus"), // minibus, teleferico
+  estado: text("estado").notNull().default("activo"), // activo, inactivo, mantenimiento
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
+export const ubicacionesGps = pgTable("ubicaciones_gps", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  vehiculoId: uuid("vehiculo_id")
+    .references(() => vehiculosGps.id, { onDelete: "cascade" })
+    .notNull(),
+  latitud: doublePrecision("latitud").notNull(),
+  longitud: doublePrecision("longitud").notNull(),
+  velocidad: doublePrecision("velocidad").default(0),
+  direccion: doublePrecision("direccion").default(0), // heading in degrees
+  satelites: integer("satelites").default(0),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+})
+
+export const transaccionesRfid = pgTable("transacciones_rfid", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tarjetaId: uuid("tarjeta_id").references(() => tarjetasRfid.id, { onDelete: "set null" }),
+  vehiculoId: uuid("vehiculo_id").references(() => vehiculosGps.id, { onDelete: "set null" }),
+  rfidUid: varchar("rfid_uid", { length: 20 }).notNull(),
+  pasajeroId: varchar("pasajero_id", { length: 20 }),
+  monto: doublePrecision("monto").notNull(),
+  tipoPago: text("tipo_pago").notNull().default("normal"), // normal, estudiante, tercera_edad
+  descuento: integer("descuento").default(0),
+  estado: text("estado").notNull().default("pendiente"), // pendiente, completado, rechazado
+  saldoRestante: doublePrecision("saldo_restante").default(0),
+  latitud: doublePrecision("latitud"),
+  longitud: doublePrecision("longitud"),
+  fechaHora: timestamp("fecha_hora").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
+export const estadisticasViaje = pgTable("estadisticas_viaje", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  vehiculoId: uuid("vehiculo_id")
+    .references(() => vehiculosGps.id, { onDelete: "cascade" })
+    .notNull(),
+  totalPasajeros: integer("total_pasajeros").default(0),
+  totalRecaudado: doublePrecision("total_recaudado").default(0),
+  pagosNormales: integer("pagos_normales").default(0),
+  pagosEstudiante: integer("pagos_estudiante").default(0),
+  pagosTerceraEdad: integer("pagos_tercera_edad").default(0),
+  fechaInicio: timestamp("fecha_inicio").defaultNow().notNull(),
+  fechaFin: timestamp("fecha_fin"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
