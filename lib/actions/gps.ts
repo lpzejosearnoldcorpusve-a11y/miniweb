@@ -5,6 +5,7 @@ import { vehiculosGps, ubicacionesGps, transaccionesRfid, estadisticasViaje, tar
 import { eq, desc, and, gte } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import type { HardwareGpsPayload, VerificacionPagoResponse } from "@/types/gps"
+import { verificarRutaVehiculo } from "./alertas"
 
 // ============ VEHICULOS GPS ============
 
@@ -289,7 +290,9 @@ export async function procesarDatosHardware(payload: HardwareGpsPayload) {
       satelites: payload.satelites,
     })
 
-    // 3. Process transactions
+    const verificacionRuta = await verificarRutaVehiculo(vehiculoId, payload.latitud, payload.longitud)
+
+    // 4. Process transactions
     const transaccionesResult = []
     for (const trans of payload.transacciones) {
       const result = await verificarPagoRfid({
@@ -303,7 +306,7 @@ export async function procesarDatosHardware(payload: HardwareGpsPayload) {
       transaccionesResult.push(result)
     }
 
-    // 4. Update trip statistics
+    // 5. Update trip statistics
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
 
@@ -339,6 +342,11 @@ export async function procesarDatosHardware(payload: HardwareGpsPayload) {
       message: "Datos procesados correctamente",
       vehiculoId,
       transacciones: transaccionesResult,
+      verificacionRuta: {
+        enRuta: verificacionRuta.enRuta,
+        distanciaDesvio: verificacionRuta.distanciaDesvio,
+        alertaGenerada: verificacionRuta.alertaGenerada,
+      },
     }
   } catch (error) {
     console.error("Error processing hardware data:", error)

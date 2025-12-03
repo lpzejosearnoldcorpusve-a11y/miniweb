@@ -1,11 +1,12 @@
 "use client"
 
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import type { VehiculoEnTiempoReal } from "@/types/gps"
 
+// Custom bus icon
 const busIcon = L.divIcon({
   className: "custom-bus-icon",
   html: `<div style="
@@ -28,6 +29,7 @@ const busIcon = L.divIcon({
   popupAnchor: [0, -16],
 })
 
+// Selected bus icon (highlighted)
 const selectedBusIcon = L.divIcon({
   className: "custom-bus-icon-selected",
   html: `<div style="
@@ -51,47 +53,117 @@ const selectedBusIcon = L.divIcon({
   popupAnchor: [0, -20],
 })
 
+const createAlertIcon = (severidad: string) => {
+  const colors: Record<string, { bg: string; border: string }> = {
+    baja: { bg: "#3b82f6", border: "#60a5fa" },
+    media: { bg: "#eab308", border: "#facc15" },
+    alta: { bg: "#f97316", border: "#fb923c" },
+    critica: { bg: "#ef4444", border: "#f87171" },
+  }
+  const color = colors[severidad] || colors.media
+
+  return L.divIcon({
+    className: `alert-icon-${severidad}`,
+    html: `<div style="
+      background: ${color.bg};
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid ${color.border};
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3), 0 2px 8px rgba(0,0,0,0.3);
+      animation: alertPulse 1s infinite;
+    ">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+      </svg>
+    </div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
+  })
+}
+
+// Alert location type
+interface AlertLocation {
+  id: string
+  lat: number
+  lng: number
+  severidad: string
+  mensaje: string
+  placa: string
+}
+
 interface GpsMapClientProps {
   vehiculos: VehiculoEnTiempoReal[]
   selectedVehiculo: string | null
   onSelectVehiculo: (id: string | null) => void
+  focusLocation?: { lat: number; lng: number } | null
+  alertLocations?: AlertLocation[]
 }
 
 function MapUpdater({
   vehiculos,
   selectedVehiculo,
-}: { vehiculos: VehiculoEnTiempoReal[]; selectedVehiculo: string | null }) {
+  focusLocation,
+}: {
+  vehiculos: VehiculoEnTiempoReal[]
+  selectedVehiculo: string | null
+  focusLocation?: { lat: number; lng: number } | null
+}) {
   const map = useMap()
 
   useEffect(() => {
-    if (selectedVehiculo) {
+    if (focusLocation) {
+      map.flyTo([focusLocation.lat, focusLocation.lng], 17, { duration: 1.5 })
+    } else if (selectedVehiculo) {
       const vehiculo = vehiculos.find((v) => v.id === selectedVehiculo)
-      if (vehiculo && vehiculo.latitud !== undefined && vehiculo.longitud !== undefined) {
-        map.flyTo([vehiculo.latitud, vehiculo.longitud], 16, { duration: 1 })
+      if (vehiculo) {
+        // Verifica que las coordenadas existan
+        if (vehiculo.latitud && vehiculo.longitud) {
+          map.flyTo([vehiculo.latitud, vehiculo.longitud], 16, { duration: 1 })
+        }
       }
     }
-  }, [selectedVehiculo, vehiculos, map])
+  }, [selectedVehiculo, vehiculos, map, focusLocation])
 
   return null
 }
 
-export default function GpsMapClient({ vehiculos, selectedVehiculo, onSelectVehiculo }: GpsMapClientProps) {
-  const vehiculosFiltrados = useMemo(() => {
-    return vehiculos.filter(v => 
-      v.latitud !== undefined && 
-      v.longitud !== undefined &&
-      !isNaN(v.latitud) && 
-      !isNaN(v.longitud)
-    )
-  }, [vehiculos])
+// Función helper para valores seguros
+const safeToFixed = (value: number | undefined | null, decimals: number = 1): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return "0".padEnd(decimals + 2, "0") // Ejemplo: "0.0" o "0.00"
+  }
+  return value.toFixed(decimals)
+}
 
-  const center: [number, number] = useMemo(() => {
-    if (vehiculosFiltrados.length > 0) {
-      const firstVehicle = vehiculosFiltrados[0]
-      return [firstVehicle.latitud, firstVehicle.longitud]
-    }
-    return [-16.5, -68.1193]
-  }, [vehiculosFiltrados])
+export function GpsMapClient({
+  vehiculos = [], // Valor por defecto
+  selectedVehiculo,
+  onSelectVehiculo,
+  focusLocation,
+  alertLocations = [],
+}: GpsMapClientProps) {
+  // Filtra vehículos con coordenadas válidas
+  const vehiculosValidos = vehiculos.filter(v => 
+    v && v.latitud !== undefined && v.longitud !== undefined && 
+    !isNaN(v.latitud) && !isNaN(v.longitud)
+  )
+
+  const center: [number, number] =
+    vehiculosValidos.length > 0 
+      ? [vehiculosValidos[0].latitud, vehiculosValidos[0].longitud] 
+      : [-16.5, -68.1193] // La Paz default
+
+  const severidadLabels: Record<string, string> = {
+    baja: "Baja",
+    media: "Media",
+    alta: "Alta",
+    critica: "Crítica",
+  }
 
   return (
     <>
@@ -100,65 +172,165 @@ export default function GpsMapClient({ vehiculos, selectedVehiculo, onSelectVehi
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.1); }
         }
+        @keyframes alertPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.8; }
+        }
+        /* Fix z-index para que los modales/formularios aparezcan sobre el mapa */
+        .leaflet-container {
+          z-index: 0 !important;
+        }
+        .leaflet-pane {
+          z-index: 400 !important;
+        }
+        .leaflet-tile-pane {
+          z-index: 200 !important;
+        }
+        .leaflet-overlay-pane {
+          z-index: 400 !important;
+        }
+        .leaflet-shadow-pane {
+          z-index: 500 !important;
+        }
+        .leaflet-marker-pane {
+          z-index: 600 !important;
+        }
+        .leaflet-tooltip-pane {
+          z-index: 650 !important;
+        }
+        .leaflet-popup-pane {
+          z-index: 700 !important;
+        }
+        /* Asegurar que los controles del mapa no interfieran */
+        .leaflet-control-container {
+          z-index: 800 !important;
+        }
       `}</style>
-      <MapContainer center={center} zoom={13} style={{ height: "500px", width: "100%", borderRadius: "0.75rem" }}>
+      <MapContainer 
+        center={center} 
+        zoom={13} 
+        style={{ height: "500px", width: "100%", borderRadius: "0.75rem" }}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapUpdater vehiculos={vehiculosFiltrados} selectedVehiculo={selectedVehiculo} />
+        <MapUpdater 
+          vehiculos={vehiculosValidos} 
+          selectedVehiculo={selectedVehiculo} 
+          focusLocation={focusLocation} 
+        />
 
-        {vehiculosFiltrados.map((vehiculo) => {
-          const velocidadFormateada = vehiculo.velocidad !== undefined && vehiculo.velocidad !== null 
-            ? vehiculo.velocidad.toFixed(1)
-            : "0.0"
-          
-          const recaudadoFormateado = vehiculo.recaudadoHoy !== undefined && vehiculo.recaudadoHoy !== null 
-            ? vehiculo.recaudadoHoy.toFixed(2)
-            : "0.00"
+        {/* Vehicle markers - solo vehículos válidos */}
+        {vehiculosValidos.map((vehiculo) => (
+          <Marker
+            key={vehiculo.id}
+            position={[vehiculo.latitud, vehiculo.longitud]}
+            icon={vehiculo.id === selectedVehiculo ? selectedBusIcon : busIcon}
+            eventHandlers={{
+              click: () => onSelectVehiculo(vehiculo.id),
+            }}
+          >
+            <Popup>
+              <div className="min-w-[200px] p-1">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                    {vehiculo.placa || "Sin placa"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {vehiculo.linea || "Sin línea"}
+                  </span>
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Velocidad:</span>
+                    <span className="font-medium">
+                      {safeToFixed(vehiculo.velocidad, 1)} km/h
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pasajeros hoy:</span>
+                    <span className="font-medium">
+                      {vehiculo.pasajerosHoy ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Recaudado:</span>
+                    <span className="font-medium text-green-600">
+                      Bs {safeToFixed(vehiculo.recaudadoHoy, 2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Satélites GPS:</span>
+                    <span className="font-medium">
+                      {vehiculo.satelites ?? 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
-          return (
-            <Marker
-              key={vehiculo.id}
-              position={[vehiculo.latitud, vehiculo.longitud]}
-              icon={vehiculo.id === selectedVehiculo ? selectedBusIcon : busIcon}
-              eventHandlers={{
-                click: () => onSelectVehiculo(vehiculo.id),
-              }}
+        {/* Alert markers - solo alertas válidas */}
+        {alertLocations
+          .filter(alert => alert && alert.lat && alert.lng && !isNaN(alert.lat) && !isNaN(alert.lng))
+          .map((alert) => (
+            <Marker 
+              key={`alert-${alert.id}`} 
+              position={[alert.lat, alert.lng]} 
+              icon={createAlertIcon(alert.severidad)}
             >
               <Popup>
-                <div className="min-w-[200px] p-1">
+                <div className="min-w-[220px] p-1">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                      {vehiculo.placa || "Sin placa"}
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-semibold text-white ${
+                        alert.severidad === "critica"
+                          ? "bg-red-500"
+                          : alert.severidad === "alta"
+                            ? "bg-orange-500"
+                            : alert.severidad === "media"
+                              ? "bg-yellow-500"
+                              : "bg-blue-500"
+                      }`}
+                    >
+                      ALERTA {severidadLabels[alert.severidad]?.toUpperCase() || "DESCONOCIDA"}
                     </span>
-                    <span className="text-xs text-muted-foreground">{vehiculo.linea || "Sin línea"}</span>
                   </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Velocidad:</span>
-                      <span className="font-medium">{velocidadFormateada} km/h</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Pasajeros hoy:</span>
-                      <span className="font-medium">{vehiculo.pasajerosHoy ?? 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Recaudado:</span>
-                      <span className="font-medium text-green-600">Bs {recaudadoFormateado}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Satélites GPS:</span>
-                      <span className="font-medium">{vehiculo.satelites ?? 0}</span>
-                    </div>
+                  <div className="mb-2">
+                    <span className="font-semibold">{alert.placa || "Sin placa"}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {alert.mensaje || "Sin mensaje"}
+                  </p>
                 </div>
               </Popup>
             </Marker>
-          )
-        })}
+          ))}
+
+        {/* Alert radius circles for critical alerts */}
+        {alertLocations
+          .filter((a) => a && a.severidad && (a.severidad === "critica" || a.severidad === "alta") && a.lat && a.lng)
+          .map((alert) => (
+            <Circle
+              key={`circle-${alert.id}`}
+              center={[alert.lat, alert.lng]}
+              radius={200}
+              pathOptions={{
+                color: alert.severidad === "critica" ? "#ef4444" : "#f97316",
+                fillColor: alert.severidad === "critica" ? "#ef4444" : "#f97316",
+                fillOpacity: 0.1,
+                weight: 2,
+                dashArray: "5, 5",
+              }}
+            />
+          ))}
       </MapContainer>
     </>
   )
 }
+
+// Keep default export for backward compatibility
+export default GpsMapClient

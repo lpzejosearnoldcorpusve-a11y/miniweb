@@ -157,3 +157,42 @@ export const estadisticasViaje = pgTable("estadisticas_viaje", {
   fechaFin: timestamp("fecha_fin"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
+
+export const alertasGps = pgTable("alertas_gps", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  vehiculoId: uuid("vehiculo_id")
+    .references(() => vehiculosGps.id, { onDelete: "cascade" })
+    .notNull(),
+  transporteId: uuid("transporte_id").references(() => transportes.id, { onDelete: "set null" }),
+  rutaId: uuid("ruta_id").references(() => rutas.id, { onDelete: "set null" }),
+  tipoAlerta: text("tipo_alerta").notNull(), // desvio_ruta, fuera_servicio, velocidad_excesiva, sin_movimiento
+  severidad: text("severidad").notNull().default("media"), // baja, media, alta, critica
+  mensaje: text("mensaje").notNull(),
+  latitud: doublePrecision("latitud").notNull(),
+  longitud: doublePrecision("longitud").notNull(),
+  distanciaDesvio: doublePrecision("distancia_desvio"), // distance from route in meters
+  estado: text("estado").notNull().default("activa"), // activa, revisada, resuelta, ignorada
+  revisadoPor: uuid("revisado_por").references(() => users.id, { onDelete: "set null" }),
+  notasResolucion: text("notas_resolucion"),
+  fechaAlerta: timestamp("fecha_alerta").defaultNow().notNull(),
+  fechaResolucion: timestamp("fecha_resolucion"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
+export const asignacionesRuta = pgTable("asignaciones_ruta", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  vehiculoId: uuid("vehiculo_id")
+    .references(() => vehiculosGps.id, { onDelete: "cascade" })
+    .notNull(),
+  transporteId: uuid("transporte_id")
+    .references(() => transportes.id, { onDelete: "cascade" })
+    .notNull(),
+  rutaId: uuid("ruta_id")
+    .references(() => rutas.id, { onDelete: "cascade" })
+    .notNull(),
+  toleranciaMetros: integer("tolerancia_metros").default(100), // allowed deviation in meters
+  activa: text("activa").notNull().default("activa"), // activa, pausada, finalizada
+  fechaInicio: timestamp("fecha_inicio").defaultNow().notNull(),
+  fechaFin: timestamp("fecha_fin"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+})

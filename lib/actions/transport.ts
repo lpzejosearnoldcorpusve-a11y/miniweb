@@ -56,7 +56,7 @@ export async function getMinibuses() {
     const results = await Promise.all(
       allMinibuses.map(async (m) => {
         const route = await db.select().from(rutas).where(eq(rutas.transporteId, m.id)).limit(1)
-        return { ...m, ruta: route[0]?.puntos || [] }
+        return { ...m, ruta: route[0]?.puntos || [], rutaId: route[0]?.id || null }
       }),
     )
 
@@ -108,5 +108,21 @@ export async function createRoute(data: { transporte_id: string; nombre: string;
   } catch (error) {
     console.error("Error creating route:", error)
     return { success: false, error: "Failed to create route" }
+  }
+}
+
+// --- Rutas ---
+export async function getRutas(transporteId?: string) {
+  try {
+    if (transporteId) {
+      const results = await db.select().from(rutas).where(eq(rutas.transporteId, transporteId)).orderBy(rutas.createdAt)
+      return results
+    }
+
+    const allRutas = await db.select().from(rutas).orderBy(rutas.createdAt)
+    return allRutas
+  } catch (error) {
+    console.error("Error fetching rutas:", error)
+    return []
   }
 }
