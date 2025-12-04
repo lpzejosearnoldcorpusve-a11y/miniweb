@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge"
 import { useUsuariosAppMutations } from "@/hooks/use-usuarios-app"
 import { useTarjetas } from "@/hooks/use-tarjetas"
 import { Loader2, CreditCard, X } from "lucide-react"
-import type { UsuarioAppWithTarjetas } from "@/types"
+import { TarjetaValidacionPanel } from "./tarjeta-validacion-panel"
+import type { UsuarioAppWithTarjetas, TarjetaRfid } from "@/types"
 
 interface VincularTarjetaDialogProps {
   open: boolean
@@ -29,14 +30,19 @@ export function VincularTarjetaDialog({ open, onOpenChange, usuario }: VincularT
   const { tarjetas } = useTarjetas()
   const [isLoading, setIsLoading] = useState(false)
   const [search, setSearch] = useState("")
+  const [selectedTarjeta, setSelectedTarjeta] = useState<TarjetaRfid | null>(null)
 
-  // Filter tarjetas not linked to any user
-  const availableTarjetas = (tarjetas ?? []).filter((t) => !t.usuarioAppId && t.uid.includes(search.toUpperCase()))
+  // Filter tarjetas not linked to any user, by celular and active status
+  const availableTarjetas = (tarjetas ?? []).filter(
+    (t) =>
+      !t.usuarioAppId && t.estado === "activa" && t.celular.includes(search)
+  )
 
   const handleVincular = async (tarjetaId: string) => {
     setIsLoading(true)
     try {
       await vincularTarjeta(usuario.id, tarjetaId)
+      setSelectedTarjeta(null)
     } finally {
       setIsLoading(false)
     }
@@ -74,8 +80,9 @@ export function VincularTarjetaDialog({ open, onOpenChange, usuario }: VincularT
               <div className="space-y-2">
                 {usuario.tarjetas.map((tarjeta) => (
                   <div key={tarjeta.id} className="flex items-center justify-between rounded-lg border bg-muted/30 p-2">
-                    <div className="flex items-center gap-2">
-                      <code className="text-sm">{tarjeta.uid}</code>
+                    <div className="flex flex-col gap-1">
+                      <p className="font-medium">{tarjeta.nombre}</p>
+                      <code className="text-xs">{tarjeta.celular}</code>
                       <Badge variant="outline">Bs. {tarjeta.montoBs.toFixed(2)}</Badge>
                     </div>
                     <Button
@@ -96,25 +103,43 @@ export function VincularTarjetaDialog({ open, onOpenChange, usuario }: VincularT
             <Label htmlFor="search">Buscar Tarjeta Disponible</Label>
             <Input
               id="search"
-              placeholder="Buscar por UID..."
+              placeholder="Buscar por celular..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+          <TarjetaValidacionPanel tarjeta={selectedTarjeta} />
 
           <div className="max-h-48 space-y-2 overflow-y-auto">
             {availableTarjetas.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">No hay tarjetas disponibles</p>
             ) : (
               availableTarjetas.map((tarjeta) => (
-                <div key={tarjeta.id} className="flex items-center justify-between rounded-lg border p-2">
-                  <div>
-                    <code className="text-sm">{tarjeta.uid}</code>
-                    <p className="text-xs text-muted-foreground">{tarjeta.nombre}</p>
+                <div
+                  key={tarjeta.id}
+                  className={`cursor-pointer rounded-lg border p-2 transition-colors ${
+                    selectedTarjeta?.id === tarjeta.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                  }`}
+                  onClick={() => setSelectedTarjeta(tarjeta)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{tarjeta.nombre}</p>
+                      <p className="text-xs text-muted-foreground">{tarjeta.celular}</p>
+                      <p className="text-xs text-muted-foreground">Bs. {tarjeta.montoBs.toFixed(2)}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleVincular(tarjeta.id)
+                      }}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Vincular"}
+                    </Button>
                   </div>
-                  <Button size="sm" onClick={() => handleVincular(tarjeta.id)} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Vincular"}
-                  </Button>
                 </div>
               ))
             )}
