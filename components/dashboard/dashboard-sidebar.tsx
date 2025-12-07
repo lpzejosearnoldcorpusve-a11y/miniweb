@@ -13,6 +13,7 @@ import {
   CreditCard,
   Smartphone,
   Navigation,
+  FileWarning,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -46,6 +47,11 @@ const menuItems = [
     title: "Mapa GPS",
     icon: Navigation,
     href: "/dashboard/mapa-gps",
+  },
+  {
+    title: "Reportes",
+    icon: FileWarning,
+    href: "/dashboard/reportes",
   },
   {
     title: "Estadísticas",

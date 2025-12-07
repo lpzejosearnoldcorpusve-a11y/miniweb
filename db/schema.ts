@@ -190,9 +190,80 @@ export const asignacionesRuta = pgTable("asignaciones_ruta", {
   rutaId: uuid("ruta_id")
     .references(() => rutas.id, { onDelete: "cascade" })
     .notNull(),
-  toleranciaMetros: integer("tolerancia_metros").default(100), // allowed deviation in meters
-  activa: text("activa").notNull().default("activa"), // activa, pausada, finalizada
+  toleranciaMetros: integer("tolerancia_metros").default(100),
+  activa: text("activa").notNull().default("activa"),
   fechaInicio: timestamp("fecha_inicio").defaultNow().notNull(),
   fechaFin: timestamp("fecha_fin"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
+export const choferes = pgTable("choferes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  nombres: text("nombres").notNull(),
+  apellidoPaterno: text("apellido_paterno").notNull(),
+  apellidoMaterno: text("apellido_materno").notNull(),
+  carnetIdentidad: varchar("carnet_identidad", { length: 20 }).notNull().unique(),
+  licencia: varchar("licencia", { length: 20 }).notNull(),
+  categoriaLicencia: varchar("categoria_licencia", { length: 5 }).notNull(),
+  celular: varchar("celular", { length: 20 }),
+  estado: text("estado").notNull().default("activo"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
+export const placas = pgTable("placas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  placa: varchar("placa", { length: 15 }).notNull().unique(),
+  tipoPlaca: text("tipo_placa").notNull().default("moderna"), // moderna, antigua
+  choferId: uuid("chofer_id").references(() => choferes.id, { onDelete: "set null" }),
+  linea: text("linea"),
+  sindicato: text("sindicato"),
+  estado: text("estado").notNull().default("activo"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
+export const infracciones = pgTable("infracciones", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  placaId: uuid("placa_id")
+    .references(() => placas.id, { onDelete: "cascade" })
+    .notNull(),
+  choferId: uuid("chofer_id").references(() => choferes.id, { onDelete: "set null" }),
+  tipoInfraccion: text("tipo_infraccion").notNull(), // trameaje, exceso_velocidad, desvio_ruta, etc
+  descripcion: text("descripcion"),
+  montoBs: doublePrecision("monto_bs").notNull().default(100),
+  estado: text("estado").notNull().default("pendiente"), // pendiente, pagada, condonada
+  fechaInfraccion: timestamp("fecha_infraccion").defaultNow().notNull(),
+  fechaPago: timestamp("fecha_pago"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
+export const reportesTrameaje = pgTable("reportes_trameaje", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  placa: varchar("placa", { length: 15 }).notNull(),
+  linea: text("linea").notNull(),
+  usuarioAppId: uuid("usuario_app_id").references(() => usuariosApp.id, { onDelete: "set null" }),
+  // Timestamps
+  horaReporte: timestamp("hora_reporte").defaultNow().notNull(),
+  horaSuceso: timestamp("hora_suceso").notNull(),
+  // Location
+  latitud: doublePrecision("latitud"),
+  longitud: doublePrecision("longitud"),
+  direccion: text("direccion"),
+  // Evidence
+  evidenciaImagenes: jsonb("evidencia_imagenes").$type<string[]>().default([]),
+  evidenciaVideos: jsonb("evidencia_videos").$type<string[]>().default([]),
+  evidenciaAudios: jsonb("evidencia_audios").$type<string[]>().default([]),
+  mensaje: text("mensaje"),
+  // Status
+  tipoReporte: text("tipo_reporte").notNull().default("trameaje"), // trameaje, maltrato, accidente, otro
+  estado: text("estado").notNull().default("pendiente"), // pendiente, en_revision, verificado, rechazado, resuelto
+  prioridad: text("prioridad").notNull().default("media"), // baja, media, alta, urgente
+  // Resolution
+  revisadoPor: uuid("revisado_por").references(() => users.id, { onDelete: "set null" }),
+  notasRevision: text("notas_revision"),
+  infraccionGenerada: uuid("infraccion_generada").references(() => infracciones.id, { onDelete: "set null" }),
+  fechaResolucion: timestamp("fecha_resolucion"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
