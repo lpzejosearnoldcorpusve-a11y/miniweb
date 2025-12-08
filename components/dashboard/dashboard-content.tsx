@@ -1,32 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bus, Users, MapPin, TrendingUp } from "lucide-react"
+'use client'
 
-const stats = [
-  {
-    title: "Rutas Activas",
-    value: "0",
-    icon: Bus,
-    description: "Rutas de transporte público",
-  },
-  {
-    title: "Usuarios Registrados",
-    value: "0",
-    icon: Users,
-    description: "Total de usuarios en el sistema",
-  },
-  {
-    title: "Puntos GPS",
-    value: "0",
-    icon: MapPin,
-    description: "Puntos de geolocalización",
-  },
-  {
-    title: "Eficiencia",
-    value: "0%",
-    icon: TrendingUp,
-    description: "Mejora en tiempos de viaje",
-  },
-]
+import { StatsOverview } from "./stats-overview"
+import { DevicesChart } from "./devices-chart"
+import { RoutesCard } from "./routes-card"
+import { AlertsCard } from "./alerts-card"
+import { ReportsCard } from "./reports-card"
+import { LiveMonitor } from "./live-monitor"
+import { ConnectivityStatus } from "./connectivity-status"
+import { DevicesTable } from "./devices-table"
 
 export function DashboardContent() {
   return (
@@ -38,45 +19,37 @@ export function DashboardContent() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-              </CardContent>
-            </Card>
-          )
-        })}
+      {/* Stats Overview */}
+      <StatsOverview />
+
+      {/* Main Dashboard Grid */}
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+        {/* Devices Chart - spans 2 columns */}
+        <DevicesChart />
+
+        {/* Routes Card */}
+        <RoutesCard />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-            <CardDescription>No hay actividades registradas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center h-32 text-muted-foreground">Sin datos disponibles</div>
-          </CardContent>
-        </Card>
+      {/* Second Row */}
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+        {/* Alerts Card */}
+        <AlertsCard />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Rutas Monitoreadas</CardTitle>
-            <CardDescription>Estado de las rutas en tiempo real</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center h-32 text-muted-foreground">Sin rutas configuradas</div>
-          </CardContent>
-        </Card>
+        {/* Reports Card - spans 2 columns */}
+        <ReportsCard />
       </div>
+
+      {/* Connectivity Status and Live Monitoring */}
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+        <ConnectivityStatus />
+      </div>
+
+      {/* Devices Table in Real-time */}
+      <DevicesTable />
+
+      {/* Live Monitoring */}
+      <LiveMonitor />
     </div>
   )
 }
